@@ -1,15 +1,12 @@
 from flask import Flask, request
 import functools
 app = Flask(__name__)
-
+reverseOp = {"+": "-", "-": "+", "*": "/", "/": "*"}
 def mydecorator(f):
     @functools.wraps(f)
     def reverseCal(*args, **kwargs):
         req_data = request.get_json()
-        if req_data['op'] == '+':
-            req_data['op'] = '-'
-        elif req_data['op'] == '-':
-            req_data['op'] = '+'
+        req_data['op'] = reverseOp[req_data['op']]
         result = f(*args, **kwargs)
         return result
     return reverseCal
