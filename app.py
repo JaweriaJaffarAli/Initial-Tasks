@@ -1,25 +1,43 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import functools
+from flask_pymongo import PyMongo
+import pymongo
+from pymongo import MongoClient
+from bson.json_util import dumps
+
 app = Flask(__name__)
-reverseOp = {"+": "-", "-": "+", "*": "/", "/": "*"}
-def mydecorator(f):
-    @functools.wraps(f)
-    def reverseCal(*args, **kwargs):
-        req_data = request.get_json()
-        req_data['op'] = reverseOp[req_data['op']]
-        result = f(*args, **kwargs)
-        return result
-    return reverseCal
+
+myClient = MongoClient('mongodb://localhost:27017')
+db = myClient["Calculator"]
+myCol1 = db["calculations"]
+myCol2 = db["last_operations"]
 
 
-@app.route( '/calc', methods = ['POST', 'GET'] )
-@mydecorator
+@app.route('/calc', methods=['POST'])
 def calc(*args, **kwargs):
     req_data = request.get_json()
     op1 = str(req_data['op1'])
     op2 = str(req_data['op2'])
     op = req_data['op']
-    return 'result: {}'.format(eval(op1 + op + op2))
+    result = eval(op1 + op + op2)
+    calcDict = {"op1": op1, "op2": op2, "op": op, "result": result}
+    d = myCol1.insert_one(calcDict)
+    if myCol2.find({"op": op}).count() != 0:
+        myCol2.update_one({"op": op}, {"$set": {"lastReq": calcDict}})
+    else:
+        x = myCol2.insert_one({"op": op, "lastReq": calcDict})
+        print(x)
+    return jsonify({"result": result})
+
+
+@app.route('/calculations', methods=['GET'])
+def get_all_calculations(*args, **kwargs):
+    output = []
+    for obj in myCol1.find({}):
+        output.append({'op1': obj['op1'], 'op2': obj['op2'], 'op': obj['op'], 'result': obj['result']})
+    total_records = myCol1.find({}).count()
+    return jsonify({"Total Calculations": total_records}, output)
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
