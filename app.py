@@ -3,7 +3,6 @@ import functools
 from flask_pymongo import PyMongo
 import pymongo
 from pymongo import MongoClient
-from bson.json_util import dumps
 
 app = Flask(__name__)
 
@@ -20,12 +19,12 @@ def calc(*args, **kwargs):
     op2 = str(req_data['op2'])
     op = req_data['op']
     result = eval(op1 + op + op2)
-    calcDict = {"op1": op1, "op2": op2, "op": op, "result": result}
-    d = myCol1.insert_one(calcDict)
-    if myCol2.find({"op": op}).count() != 0:
-        myCol2.update_one({"op": op}, {"$set": {"lastReq": calcDict}})
+    calcDict = {"op1": op1, "op2": op2, "op": op, "result": result}  # Enclosing request and result in a dictionary
+    myCol1.insert_one(calcDict)                                      # inserting in Database
+    if myCol2.find({"op": op}).count() != 0:               # checking if the operation already exists in the documents
+        myCol2.update_one({"op": op}, {"$set": {"lastReq": calcDict}})  # Updating last request of the operation
     else:
-        x = myCol2.insert_one({"op": op, "lastReq": calcDict})
+        x = myCol2.insert_one({"op": op, "lastReq": calcDict})    # inserting operation if not present already
         print(x)
     return jsonify({"result": result})
 
