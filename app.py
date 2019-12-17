@@ -18,23 +18,31 @@ def calc(*args, **kwargs):
     op1 = str(req_data['op1'])
     op2 = str(req_data['op2'])
     op = req_data['op']
+
     result = eval(op1 + op + op2)
+
     calcDict = {"op1": op1, "op2": op2, "op": op, "result": result}  # Enclosing request and result in a dictionary
+
     myCol1.insert_one(calcDict)                                      # inserting in Database
+
     if myCol2.find({"op": op}).count() != 0:               # checking if the operation already exists in the documents
         myCol2.update_one({"op": op}, {"$set": {"lastReq": calcDict}})  # Updating last request of the operation
+
     else:
         x = myCol2.insert_one({"op": op, "lastReq": calcDict})    # inserting operation if not present already
-        print(x)
+
     return jsonify({"result": result})
 
 
 @app.route('/calculations', methods=['GET'])
 def get_all_calculations(*args, **kwargs):
     output = []
+
     for obj in myCol1.find({}):
         output.append({'op1': obj['op1'], 'op2': obj['op2'], 'op': obj['op'], 'result': obj['result']})
+
     total_records = myCol1.find({}).count()
+
     return jsonify({"Total Calculations": total_records}, output)
 
 
