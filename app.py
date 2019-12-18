@@ -41,9 +41,9 @@ def get_all_calculations(*args, **kwargs):
     for obj in myCol1.find({}):
         output.append({'op1': obj['op1'], 'op2': obj['op2'], 'op': obj['op'], 'result': obj['result']})
 
-    total_records = myCol1.find({}).count()
+    total_records = myCol1.count()
 
-    return jsonify({"Total Calculations": total_records}, output)
+    return jsonify({"total_records": total_records}, output)
 
 
 if __name__ == '__main__':
